@@ -1,0 +1,40 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthResponseType {
+  accessToken: String!
+  user: UserType!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  login(input: LoginInput!): AuthResponseType!
+  register(input: RegisterInput!): UserType!
+}
+
+type Query {
+  health: String!
+  validateToken(token: String!): UserType!
+}
+
+input RegisterInput {
+  email: String!
+  password: String!
+}
+
+type UserType {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  updatedAt: DateTime!
+}

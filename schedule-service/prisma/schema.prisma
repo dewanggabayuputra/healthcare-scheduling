@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Customer {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String
+  email     String     @unique
+  schedules Schedule[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("customers")
+}
+
+model Doctor {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String
+  schedules Schedule[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("doctors")
+}
+
+model Schedule {
+  id          String   @id @default(uuid()) @db.Uuid
+  objective   String
+
+  customerId  String   @db.Uuid
+  doctorId    String   @db.Uuid
+
+  scheduledAt DateTime @db.Timestamptz(3)
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  doctor   Doctor   @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([doctorId, scheduledAt])
+  @@index([customerId])
+  @@index([scheduledAt])
+  @@map("schedules")
+}

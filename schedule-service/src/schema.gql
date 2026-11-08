@@ -1,0 +1,115 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+input CreateCustomerInput {
+  email: String!
+  name: String!
+}
+
+input CreateDoctorInput {
+  name: String!
+}
+
+input CreateScheduleInput {
+  customerId: ID!
+  doctorId: ID!
+  objective: String!
+  scheduledAt: DateTime!
+}
+
+input CustomerPaginationInput {
+  limit: Int! = 10
+  page: Int! = 1
+}
+
+type CustomerPaginationType {
+  items: [CustomerType!]!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type CustomerType {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type DoctorPaginationType {
+  items: [DoctorType!]!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type DoctorType {
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+}
+
+type Mutation {
+  createCustomer(input: CreateCustomerInput!): CustomerType!
+  createDoctor(input: CreateDoctorInput!): DoctorType!
+  createSchedule(input: CreateScheduleInput!): ScheduleType!
+  deleteCustomer(id: String!): CustomerType!
+  deleteDoctor(id: String!): DoctorType!
+  deleteSchedule(id: ID!): ScheduleType!
+  updateCustomer(id: String!, input: UpdateCustomerInput!): CustomerType!
+  updateDoctor(id: String!, input: UpdateDoctorInput!): DoctorType!
+}
+
+type Query {
+  customer(id: String!): CustomerType!
+  customers(limit: Int, page: Int, pagination: CustomerPaginationInput): CustomerPaginationType!
+  doctor(id: String!): DoctorType!
+  doctors(limit: Int! = 10, page: Int! = 1): DoctorPaginationType!
+  health: String!
+  schedule(id: ID!): ScheduleType!
+  schedules(filter: ScheduleFilterInput, limit: Int! = 10, page: Int! = 1): SchedulePaginationType!
+}
+
+input ScheduleFilterInput {
+  customerId: ID
+  doctorId: ID
+  fromDate: DateTime
+  toDate: DateTime
+}
+
+type SchedulePaginationType {
+  items: [ScheduleType!]!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type ScheduleType {
+  createdAt: DateTime!
+  customerId: ID!
+  doctorId: ID!
+  id: ID!
+  objective: String!
+  scheduledAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input UpdateCustomerInput {
+  email: String
+  name: String
+}
+
+input UpdateDoctorInput {
+  name: String
+}
