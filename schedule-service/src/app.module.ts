@@ -12,6 +12,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { CustomersModule } from './customers/customers.module';
 import { DoctorsModule } from './doctors/doctors.module';
 import { SchedulesModule } from './schedules/schedules.module';
+import { AppCacheModule } from './cache/cache.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { SchedulesModule } from './schedules/schedules.module';
     CustomersModule,
     DoctorsModule,
     SchedulesModule,
+    AppCacheModule,
+    NotificationsModule,
   ],
   providers: [
     {

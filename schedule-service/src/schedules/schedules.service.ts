@@ -8,10 +8,47 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateScheduleInput } from './dto/create-schedule.input';
 import { ScheduleFilterInput } from './dto/schedule-filter.input';
+import { CacheService } from '../cache/cache.service';
+import { restoreDate } from '../cache/date.utils';
+import { Logger } from '@nestjs/common';
+import { NotificationsService } from '../notifications/notifications.service';
+
+type CachedSchedule = {
+  id: string;
+  objective: string;
+  customerId: string;
+  doctorId: string;
+  scheduledAt: Date | string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
+
+type CachedSchedulePage = {
+  items: CachedSchedule[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+function restoreScheduleDates(schedule: CachedSchedule) {
+  return {
+    ...schedule,
+    scheduledAt: restoreDate(schedule.scheduledAt),
+    createdAt: restoreDate(schedule.createdAt),
+    updatedAt: restoreDate(schedule.updatedAt),
+  };
+}
 
 @Injectable()
 export class SchedulesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
+  
+  private readonly logger = new Logger(SchedulesService.name);
 
   async create(input: CreateScheduleInput) {
     if (
@@ -57,7 +94,7 @@ export class SchedulesService {
     }
 
     try {
-      return await this.prisma.schedule.create({
+      const schedule = await this.prisma.schedule.create({
         data: {
           objective: input.objective.trim(),
           customerId: input.customerId,
@@ -65,6 +102,26 @@ export class SchedulesService {
           scheduledAt: input.scheduledAt,
         },
       });
+
+      await this.cacheService.invalidateNamespace('schedules');
+
+      // Enqueue email notification asynchronously
+      try {
+        await this.notificationsService.sendScheduleCreatedEmail({
+          customerEmail: customer.email,
+          customerName: customer.name,
+          doctorName: doctor.name,
+          objective: schedule.objective,
+          scheduledAt: schedule.scheduledAt,
+        });
+      } catch (error) {
+        this.logger.error(
+          'Failed to enqueue schedule email notification',
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+
+      return schedule;
     } catch (error) {
       // Database-level protection against concurrent requests
       if ((error as any).code === 'P2002') {
@@ -88,8 +145,6 @@ export class SchedulesService {
     limit = 10,
     filter?: ScheduleFilterInput,
   ) {
-    const skip = (page - 1) * limit;
-
     if (
       filter?.fromDate &&
       filter?.toDate &&
@@ -99,6 +154,35 @@ export class SchedulesService {
         'fromDate must be earlier than or equal to toDate',
       );
     }
+
+    const normalizedFilter = {
+      customerId: filter?.customerId ?? null,
+      doctorId: filter?.doctorId ?? null,
+      fromDate: filter?.fromDate?.toISOString() ?? null,
+      toDate: filter?.toDate?.toISOString() ?? null,
+    };
+
+    const version =
+      await this.cacheService.getNamespaceVersion('schedules');
+
+    const cacheKey = `schedules:list:${version}:${JSON.stringify({
+      ...normalizedFilter,
+      page,
+      limit,
+    })}`;
+
+    const cachedData = await this.cacheService.get<CachedSchedulePage>(cacheKey);
+
+    if (cachedData !== undefined && cachedData !== null) {
+      console.log('SCHEDULE CACHE HIT');
+      return {
+        ...cachedData,
+        items: cachedData.items.map(restoreScheduleDates),
+      };
+    }
+    console.log('SCHEDULE CACHE MISS');
+
+    const skip = (page - 1) * limit;
 
     const where = {
       ...(filter?.customerId && {
@@ -131,16 +215,28 @@ export class SchedulesService {
       this.prisma.schedule.count({ where }),
     ]);
 
-    return {
+    const result = {
       items,
       total,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
     };
+
+    await this.cacheService.set(cacheKey, result, 60_000);
+
+    return result;
   }
 
   async findOne(id: string) {
+    const cacheKey = `schedules:detail:${id}`;
+
+    const cachedData = await this.cacheService.get<CachedSchedule>(cacheKey);
+
+    if (cachedData !== undefined && cachedData !== null) {
+      return restoreScheduleDates(cachedData);
+    }
+
     const schedule = await this.prisma.schedule.findUnique({
       where: { id },
     });
@@ -149,15 +245,54 @@ export class SchedulesService {
       throw new NotFoundException('Schedule not found');
     }
 
+    await this.cacheService.set(cacheKey, schedule, 60_000);
+
     return schedule;
   }
 
   async remove(id: string) {
     try {
-      return await this.prisma.schedule.delete({
+      const schedule = await this.prisma.schedule.findUnique({
+        where: { id },
+        include: {
+          customer: true,
+          doctor: true,
+        },
+      });
+
+      if (!schedule) {
+        throw new NotFoundException('Schedule not found');
+      }
+
+      const deletedSchedule = await this.prisma.schedule.delete({
         where: { id },
       });
+
+      await this.cacheService.del(`schedules:detail:${id}`);
+      await this.cacheService.invalidateNamespace('schedules');
+
+      // Send cancellation notification asynchronously
+      try {
+        await this.notificationsService.sendScheduleDeletedEmail({
+          customerEmail: schedule.customer.email,
+          customerName: schedule.customer.name,
+          doctorName: schedule.doctor.name,
+          objective: schedule.objective,
+          scheduledAt: schedule.scheduledAt,
+        });
+      } catch (error) {
+        this.logger.error(
+          'Failed to enqueue cancellation email',
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+
+      return deletedSchedule;
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
       if ((error as any).code === 'P2025') {
         throw new NotFoundException('Schedule not found');
       }

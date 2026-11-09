@@ -1,0 +1,209 @@
+# Healthcare Scheduling GraphQL operations
+# Auth: http://localhost:3001/graphql
+# Schedule: http://localhost:3002/graphql
+# Schedule Service requests require: Authorization: Bearer <accessToken>
+# Use the generated schema in each service as the source of truth.
+
+# AUTH SERVICE
+mutation Register($input: RegisterInput!) {
+  register(input: $input) {
+    id
+    email
+    createdAt
+    updatedAt
+  }
+}
+# Variables: {"input":{"email":"user@example.com","password":"Password123!"}}
+
+mutation Login($input: LoginInput!) {
+  login(input: $input) {
+    accessToken
+    user {
+      id
+      email
+      createdAt
+      updatedAt
+    }
+  }
+}
+# Variables: {"input":{"email":"user@example.com","password":"Password123!"}}
+
+query ValidateToken($token: String!) {
+  validateToken(token: $token) {
+    id
+    email
+    createdAt
+    updatedAt
+  }
+}
+# Variables: {"token":"<accessToken>"}
+
+# SCHEDULE SERVICE
+mutation CreateCustomer($input: CreateCustomerInput!) {
+  createCustomer(input: $input) {
+    id
+    name
+    email
+    createdAt
+    updatedAt
+  }
+}
+# Variables: {"input":{"name":"Budi Santoso","email":"budi@example.com"}}
+
+query GetCustomers($page: Int!, $limit: Int!) {
+  customers(page: $page, limit: $limit) {
+    items {
+      id
+      name
+      email
+      createdAt
+      updatedAt
+    }
+    total
+    page
+    limit
+    totalPages
+  }
+}
+# Variables: {"page":1,"limit":10}
+
+query GetCustomer($id: String!) {
+  customer(id: $id) {
+    id
+    name
+    email
+    createdAt
+    updatedAt
+  }
+}
+# Variables: {"id":"<customerId>"}
+
+mutation UpdateCustomer($id: String!, $input: UpdateCustomerInput!) {
+  updateCustomer(id: $id, input: $input) {
+    id
+    name
+    email
+    createdAt
+    updatedAt
+  }
+}
+# Variables: {"id":"<customerId>","input":{"name":"Budi Updated"}}
+
+mutation DeleteCustomer($id: String!) {
+  deleteCustomer(id: $id) {
+    id
+    name
+    email
+  }
+}
+# Variables: {"id":"<customerId>"}
+
+mutation CreateDoctor($input: CreateDoctorInput!) {
+  createDoctor(input: $input) {
+    id
+    name
+    createdAt
+    updatedAt
+  }
+}
+# Variables: {"input":{"name":"Dr. Andi"}}
+
+query GetDoctors($page: Int!, $limit: Int!) {
+  doctors(page: $page, limit: $limit) {
+    items {
+      id
+      name
+      createdAt
+      updatedAt
+    }
+    total
+    page
+    limit
+    totalPages
+  }
+}
+# Variables: {"page":1,"limit":10}
+
+query GetDoctor($id: String!) {
+  doctor(id: $id) {
+    id
+    name
+    createdAt
+    updatedAt
+  }
+}
+# Variables: {"id":"<doctorId>"}
+
+mutation UpdateDoctor($id: String!, $input: UpdateDoctorInput!) {
+  updateDoctor(id: $id, input: $input) {
+    id
+    name
+    createdAt
+    updatedAt
+  }
+}
+# Variables: {"id":"<doctorId>","input":{"name":"Dr. Andi Updated"}}
+
+mutation DeleteDoctor($id: String!) {
+  deleteDoctor(id: $id) {
+    id
+    name
+  }
+}
+# Variables: {"id":"<doctorId>"}
+
+mutation CreateSchedule($input: CreateScheduleInput!) {
+  createSchedule(input: $input) {
+    id
+    objective
+    customerId
+    doctorId
+    scheduledAt
+    createdAt
+    updatedAt
+  }
+}
+# Variables: {"input":{"objective":"General consultation","customerId":"<customerId>","doctorId":"<doctorId>","scheduledAt":"2030-01-15T09:00:00.000Z"}}
+
+query GetSchedules($page: Int!, $limit: Int!, $filter: ScheduleFilterInput) {
+  schedules(page: $page, limit: $limit, filter: $filter) {
+    items {
+      id
+      objective
+      customerId
+      doctorId
+      scheduledAt
+      createdAt
+      updatedAt
+    }
+    total
+    page
+    limit
+    totalPages
+  }
+}
+# Variables: {"page":1,"limit":10,"filter":{}}
+
+query GetSchedule($id: ID!) {
+  schedule(id: $id) {
+    id
+    objective
+    customerId
+    doctorId
+    scheduledAt
+    createdAt
+    updatedAt
+  }
+}
+# Variables: {"id":"<scheduleId>"}
+
+mutation DeleteSchedule($id: ID!) {
+  deleteSchedule(id: $id) {
+    id
+    objective
+    customerId
+    doctorId
+    scheduledAt
+  }
+}
+# Variables: {"id":"<scheduleId>"}

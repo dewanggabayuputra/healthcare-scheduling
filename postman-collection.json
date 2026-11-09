@@ -1,0 +1,508 @@
+{
+  "info": {
+    "_postman_id": "d3c7b4b8-7a3c-4f16-9e82-5a3d3f9d1101",
+    "name": "Healthcare Scheduling System",
+    "description": "GraphQL requests for Auth and Schedule services. Login saves accessToken automatically. Set customerId, doctorId, scheduleId from create responses.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth Service",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation Register($input: RegisterInput!) { register(input: $input) { id email createdAt updatedAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"user@example.com\",\n      \"password\": \"Password123!\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{authUrl}}"
+            }
+          }
+        },
+        {
+          "name": "Login (save accessToken)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation Login($input: LoginInput!) { login(input: $input) { accessToken user { id email createdAt updatedAt } } }\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"user@example.com\",\n      \"password\": \"Password123!\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{authUrl}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data?.login?.accessToken) {",
+                  "  pm.environment.set('accessToken', json.data.login.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validate Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query ValidateToken($token: String!) { validateToken(token: $token) { id email createdAt updatedAt } }\",\n  \"variables\": {\n    \"token\": \"{{accessToken}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{authUrl}}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer",
+      "item": [
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateCustomer($input: CreateCustomerInput!) { createCustomer(input: $input) { id name email createdAt updatedAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"Budi Santoso\",\n      \"email\": \"budi@example.com\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        },
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetCustomers($page: Int!, $limit: Int!) { customers(page: $page, limit: $limit) { items { id name email createdAt updatedAt } total page limit totalPages } }\",\n  \"variables\": {\n    \"page\": 1,\n    \"limit\": 10\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        },
+        {
+          "name": "Get Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetCustomer($id: String!) { customer(id: $id) { id name email createdAt updatedAt } }\",\n  \"variables\": {\n    \"id\": \"{{customerId}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdateCustomer($id: String!, $input: UpdateCustomerInput!) { updateCustomer(id: $id, input: $input) { id name email createdAt updatedAt } }\",\n  \"variables\": {\n    \"id\": \"{{customerId}}\",\n    \"input\": {\n      \"name\": \"Budi Updated\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation DeleteCustomer($id: String!) { deleteCustomer(id: $id) { id name email createdAt updatedAt } }\",\n  \"variables\": {\n    \"id\": \"{{customerId}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doctor",
+      "item": [
+        {
+          "name": "Create Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateDoctor($input: CreateDoctorInput!) { createDoctor(input: $input) { id name createdAt updatedAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"Dr. Andi\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        },
+        {
+          "name": "List Doctors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetDoctors($page: Int!, $limit: Int!) { doctors(page: $page, limit: $limit) { items { id name createdAt updatedAt } total page limit totalPages } }\",\n  \"variables\": {\n    \"page\": 1,\n    \"limit\": 10\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        },
+        {
+          "name": "Get Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetDoctor($id: String!) { doctor(id: $id) { id name createdAt updatedAt } }\",\n  \"variables\": {\n    \"id\": \"{{doctorId}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        },
+        {
+          "name": "Update Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdateDoctor($id: String!, $input: UpdateDoctorInput!) { updateDoctor(id: $id, input: $input) { id name createdAt updatedAt } }\",\n  \"variables\": {\n    \"id\": \"{{doctorId}}\",\n    \"input\": {\n      \"name\": \"Dr. Andi Updated\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        },
+        {
+          "name": "Delete Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation DeleteDoctor($id: String!) { deleteDoctor(id: $id) { id name createdAt updatedAt } }\",\n  \"variables\": {\n    \"id\": \"{{doctorId}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Schedule",
+      "item": [
+        {
+          "name": "Create Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateSchedule($input: CreateScheduleInput!) { createSchedule(input: $input) { id objective customerId doctorId scheduledAt createdAt updatedAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"objective\": \"General consultation\",\n      \"customerId\": \"{{customerId}}\",\n      \"doctorId\": \"{{doctorId}}\",\n      \"scheduledAt\": \"2030-01-15T09:00:00.000Z\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        },
+        {
+          "name": "List Schedules",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetSchedules($page: Int!, $limit: Int!, $filter: ScheduleFilterInput) { schedules(page: $page, limit: $limit, filter: $filter) { items { id objective customerId doctorId scheduledAt createdAt updatedAt } total page limit totalPages } }\",\n  \"variables\": {\n    \"page\": 1,\n    \"limit\": 10,\n    \"filter\": {}\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        },
+        {
+          "name": "Get Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetSchedule($id: ID!) { schedule(id: $id) { id objective customerId doctorId scheduledAt createdAt updatedAt } }\",\n  \"variables\": {\n    \"id\": \"{{scheduleId}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        },
+        {
+          "name": "Delete Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation DeleteSchedule($id: ID!) { deleteSchedule(id: $id) { id objective customerId doctorId scheduledAt } }\",\n  \"variables\": {\n    \"id\": \"{{scheduleId}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{scheduleUrl}}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
